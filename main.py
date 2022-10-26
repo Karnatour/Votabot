@@ -1,25 +1,32 @@
+# TODO
+# Kdyz zacne hrat dalsi song tak to nenapise ze zacal
+# Kdyz se prida dalsi song do queue tak to napise now playing misto added to queue
+# leave po čase
+
 import lavaplayer
 import discord
 import json
 from discord.ext import commands
+from discord.utils import get
 
-with open("config.json", "r") as file:
+with open("config_test.json", "r") as file:
     jsonData = json.load(file)
 
 TOKENjs = jsonData["token"]
 hostjs = jsonData["host"]
 
 TOKEN = TOKENjs
-PREFIX = "?"
+PREFIX = "-"
 
-bot = commands.Bot(commands.when_mentioned_or(PREFIX), enable_debug_events=True, intents=discord.Intents.all())
+intents = discord.Intents.all()
+
+bot = commands.Bot(commands.when_mentioned_or(PREFIX), enable_debug_events=True, intents=intents)
 
 lavalink = lavaplayer.LavalinkClient(
     host=hostjs,
     port=5464,
     password="votabot",
     user_id=1033812615417307146,
-    is_ssl=False
 )
 
 
@@ -42,18 +49,37 @@ async def on_ready():
 
 @bot.command(help="Připoj se do kanálu")
 async def join(ctx: commands.Context):
-    await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
-    await lavalink.wait_for_connection(ctx.guild.id)
+    if ctx.author.voice and ctx.author.voice.channel:
+        await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
+        await lavalink.wait_for_connection(ctx.guild.id)
+    else:
+        await ctx.send("Musíš být v kanále pro použití tohoto commandu")
 
 
 @bot.command(help="Odpoj se z kanálu")
 async def leave(ctx: commands.Context):
-    await ctx.guild.change_voice_state(channel=None)
-    await lavalink.wait_for_remove_connection(ctx.guild.id)
+    if ctx.author.voice is None:
+        await ctx.send("Musíš být v kanálu pro použití tohoto commandu")
+    elif ctx.guild.voice_client is not ctx.author.voice.channel:
+        await ctx.send("Musíš být ve stejným kanálu jako já pro použití tohoto commandu")
+    else:
+        await ctx.guild.change_voice_state(channel=None)
+        await lavalink.wait_for_remove_connection(ctx.guild.id)
+
+
+@bot.command(help="channel")
+async def channel(ctx: commands.Context):
+    if ctx.voice_client is None:
+        return await ctx.send("Bot is not in channel")
+    else:
+        await ctx.send(ctx.voice_client)
 
 
 @bot.command(help="Pustí song")
 async def play(ctx: commands.Context, *, query: str):
+    if not(ctx.author.voice):
+        await ctx.send("Musíš být v kanále pro použití tohoto commandu")
+        return
     await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
     await lavalink.wait_for_connection(ctx.guild.id)
     tracks = await lavalink.auto_search_tracks(query)
@@ -81,14 +107,10 @@ async def queue(ctx: commands.Context):
     await ctx.send("\n".join(tracks))
 
 
-
-
 @bot.event
-
 #
-#This section took from https://github.com/HazemMeqdad/lavaplayer/blob/master/examples/dpy_base_v2/bot.py
+# This section took from https://github.com/HazemMeqdad/lavaplayer/blob/master/examples/dpy_base_v2/bot.py
 #
-
 async def on_socket_raw_receive(msg):
     data = json.loads(msg)
 
