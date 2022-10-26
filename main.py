@@ -1,7 +1,8 @@
-# TODO
-# Kdyz zacne hrat dalsi song tak to nenapise ze zacal
-# Kdyz se prida dalsi song do queue tak to napise now playing misto added to queue
-# leave po čase
+# TODO Kdyz zacne hrat dalsi song tak to nenapise ze zacal
+# TODO Kdyz se prida dalsi song do queue tak to napise now playing misto added to queue
+# TODO leave po čase
+# TODO Proper queue
+import typing
 
 import lavaplayer
 import discord
@@ -47,7 +48,7 @@ async def on_ready():
 # @bot.command(name="help", help="Ukáže všechny commands")
 # async def help(ctx: commands.Context):
 
-@bot.command(help="Připoj se do kanálu")
+@bot.command(help="Připojí se do kanálu")
 async def join(ctx: commands.Context):
     if ctx.author.voice and ctx.author.voice.channel:
         await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
@@ -56,28 +57,18 @@ async def join(ctx: commands.Context):
         await ctx.send("Musíš být v kanále pro použití tohoto commandu")
 
 
-@bot.command(help="Odpoj se z kanálu")
+@bot.command(help="Odpojí se z kanálu")
 async def leave(ctx: commands.Context):
     if ctx.author.voice is None:
         await ctx.send("Musíš být v kanálu pro použití tohoto commandu")
-    elif ctx.guild.voice_client is not ctx.author.voice.channel:
-        await ctx.send("Musíš být ve stejným kanálu jako já pro použití tohoto commandu")
     else:
         await ctx.guild.change_voice_state(channel=None)
         await lavalink.wait_for_remove_connection(ctx.guild.id)
 
 
-@bot.command(help="channel")
-async def channel(ctx: commands.Context):
-    if ctx.voice_client is None:
-        return await ctx.send("Bot is not in channel")
-    else:
-        await ctx.send(ctx.voice_client)
-
-
 @bot.command(help="Pustí song")
 async def play(ctx: commands.Context, *, query: str):
-    if not(ctx.author.voice):
+    if not (ctx.author.voice):
         await ctx.send("Musíš být v kanále pro použití tohoto commandu")
         return
     await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
@@ -100,11 +91,32 @@ async def play(ctx: commands.Context, *, query: str):
 
 @bot.command(help="Songy v queue")
 async def queue(ctx: commands.Context):
-    queue = lavalink.queue(ctx.guild.id)
+    queue = await lavalink.queue(ctx.guild.id)
+    queue2 = list(enumerate(queue))
+    print(queue2)
     if not queue:
         return await ctx.send("Žádné songy v queue.")
-    tracks = [f"**{i + 1}.** {t.title}" for (i, t) in enumerate(queue)]
-    await ctx.send("\n".join(tracks))
+    tracks = "".join(queue2)
+    print(tracks)
+    #await ctx.send(tracks)
+
+
+@bot.command(help="Skipne song")
+async def skip(ctx: commands.Context):
+    await lavalink.skip(ctx.guild.id)
+    await ctx.send("Skipped!")
+
+
+@bot.command(help="Pauza")
+async def pause(ctx: commands.Context):
+    await lavalink.pause(ctx.guild.id, True)
+    await ctx.send("Paused")
+
+
+@bot.command(help="Pokračovat")
+async def resume(ctx: commands.Context):
+    await lavalink.pause(ctx.guild.id, False)
+    await ctx.send("Pokračuji")
 
 
 @bot.event
