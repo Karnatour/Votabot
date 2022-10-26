@@ -2,13 +2,12 @@
 # TODO Kdyz se prida dalsi song do queue tak to napise now playing misto added to queue
 # TODO leave po čase
 # TODO Proper queue
-import typing
 
-import lavaplayer
-import discord
 import json
+
+import discord
+import lavaplayer
 from discord.ext import commands
-from discord.utils import get
 
 with open("config_test.json", "r") as file:
     jsonData = json.load(file)
@@ -68,7 +67,7 @@ async def leave(ctx: commands.Context):
 
 @bot.command(help="Pustí song")
 async def play(ctx: commands.Context, *, query: str):
-    if not (ctx.author.voice):
+    if not ctx.author.voice:
         await ctx.send("Musíš být v kanále pro použití tohoto commandu")
         return
     await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
@@ -91,14 +90,16 @@ async def play(ctx: commands.Context, *, query: str):
 
 @bot.command(help="Songy v queue")
 async def queue(ctx: commands.Context):
-    queue = await lavalink.queue(ctx.guild.id)
-    queue2 = list(enumerate(queue))
-    print(queue2)
-    if not queue:
+    queue_v = await lavalink.queue(ctx.guild.id)
+    if not queue_v:
         return await ctx.send("Žádné songy v queue.")
-    tracks = "".join(queue2)
-    print(tracks)
-    #await ctx.send(tracks)
+    embed = discord.Embed(title="Queue", description="Songy v queue jsou:", color=0x00fbff)
+    for tracks, queue_v in enumerate(queue_v):
+        if tracks == 0:
+            embed.add_field(name="Právě hraje:", value=queue_v, inline=False)
+        else:
+            embed.add_field(name=str(tracks) + ")", value=queue_v, inline=False)
+    await ctx.send(embed=embed)
 
 
 @bot.command(help="Skipne song")
