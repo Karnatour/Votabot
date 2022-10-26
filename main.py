@@ -19,8 +19,8 @@ TOKEN = TOKENjs
 PREFIX = "-"
 
 intents = discord.Intents.all()
-
-bot = commands.Bot(commands.when_mentioned_or(PREFIX), enable_debug_events=True, intents=intents)
+activity = discord.Activity(name="-help pro zobrazení příkazů",type=discord.ActivityType.playing)
+bot = commands.Bot(commands.when_mentioned_or(PREFIX), enable_debug_events=True, intents=intents, activity=activity)
 
 lavalink = lavaplayer.LavalinkClient(
     host=hostjs,
