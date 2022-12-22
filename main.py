@@ -91,7 +91,7 @@ async def shuffle(ctx: commands.Context):
     await ctx.send("Shuffeled")
 
 
-@bot.command(help="Now Playing")
+@bot.command(help="Právě hraje(WIP)")
 async def np(ctx: commands.Context):
     queue = await lavalink.queue(ctx.guild.id)
     if not queue:
@@ -139,7 +139,7 @@ async def clear(ctx: commands.Context):
     await ctx.send("Queue smazána")
 
 
-@bot.command(help="Vymaže song")
+@bot.command(help="Vymaže song podle zadaného pořadí")
 async def remove(ctx: commands.Context, index: int):
     m_queue = await lavalink.queue(ctx.guild.id)
     length = len(m_queue)
