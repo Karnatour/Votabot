@@ -1,10 +1,6 @@
-# TODO Kdyz zacne hrat dalsi song tak to nenapise ze zacal
-# TODO Kdyz se prida dalsi song do queue tak to napise now playing misto added to queue
 # TODO leave po čase
-# TODO Proper queue
 
 import json
-
 import discord
 import lavaplayer
 from discord.ext import commands
@@ -19,7 +15,8 @@ TOKEN = TOKENjs
 PREFIX = "-"
 
 intents = discord.Intents.all()
-activity = discord.Activity(name="-help pro zobrazení příkazů",type=discord.ActivityType.playing)
+activity = discord.Activity(name="-help pro zobrazení příkazů", type=discord.ActivityType.playing)
+# bot = commands.Bot(commands.when_mentioned_or("?","!"), enable_debug_events=True, intents=intents, activity=activity)
 bot = commands.Bot(commands.when_mentioned_or(PREFIX), enable_debug_events=True, intents=intents, activity=activity)
 
 lavalink = lavaplayer.LavalinkClient(
@@ -43,9 +40,6 @@ async def on_ready():
     lavalink.connect()
     print("Lavalink je ready")
 
-
-# @bot.command(name="help", help="Ukáže všechny commands")
-# async def help(ctx: commands.Context):
 
 @bot.command(help="Připojí se do kanálu")
 async def join(ctx: commands.Context):
@@ -73,32 +67,55 @@ async def play(ctx: commands.Context, *, query: str):
     await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
     await lavalink.wait_for_connection(ctx.guild.id)
     tracks = await lavalink.auto_search_tracks(query)
-
     if not tracks:
         return await ctx.send("Nic nenalezeno")
     elif isinstance(tracks, lavaplayer.TrackLoadFailed):
         await ctx.send("Načtení songu selhalo poop code GG")
-    # Playlist
     elif isinstance(tracks, lavaplayer.PlayList):
         msg = await ctx.send("Playlist nalezen, přidávám do queue")
         await lavalink.add_to_queue(ctx.guild.id, tracks.tracks, ctx.author.id)
-        await msg.edit(content="Přidáno do queue songy: {}, názvy: {}".format(len(tracks.tracks), tracks.name))
+        await msg.edit(
+            content="Playlist přidán do queue počet songů: {}, název: {}".format(len(tracks.tracks), tracks.name, ))
         return
     await lavalink.play(ctx.guild.id, tracks[0], ctx.author.id)
-    await ctx.send(f"Now playing: {tracks[0].title}")
+    milliseconds = tracks[0].length
+    seconds, milliseconds = divmod(milliseconds, 1000)
+    minutes, seconds = divmod(seconds, 60)
+
+    await ctx.send(f"Přidáno do queue: {tracks[0].title} {int(minutes):02d}:{int(seconds):02d}")
+
+
+@bot.command(help="Shuffle")
+async def shuffle(ctx: commands.Context):
+    await lavalink.shuffle(ctx.guild.id)
+    await ctx.send("Shuffeled")
+
+
+@bot.command(help="Now Playing")
+async def np(ctx: commands.Context):
+    queue = await lavalink.queue(ctx.guild.id)
+    if not queue:
+        return await ctx.send("Žádný song nehraje.")
+    old_timestamp = queue[0].position
+    milliseconds = queue[0].length
+
+    seconds, milliseconds = divmod(milliseconds, 1000)
+    minutes, seconds = divmod(seconds, 60)
 
 
 @bot.command(help="Songy v queue")
 async def queue(ctx: commands.Context):
-    queue_v = await lavalink.queue(ctx.guild.id)
-    if not queue_v:
+    m_queue = await lavalink.queue(ctx.guild.id)
+    if not m_queue:
         return await ctx.send("Žádné songy v queue.")
-    embed = discord.Embed(title="Queue", description="Songy v queue jsou:", color=0x00fbff)
-    for tracks, queue_v in enumerate(queue_v):
-        if tracks == 0:
-            embed.add_field(name="Právě hraje:", value=queue_v, inline=False)
-        else:
-            embed.add_field(name=str(tracks) + ")", value=queue_v, inline=False)
+    embed = discord.Embed(title="Právě Hraje", color=0x00fbff)
+    for tracks, m_queue in enumerate(m_queue):
+        if tracks != 0:
+            var = m_queue.length
+            seconds, milliseconds = divmod(var, 1000)
+            minutes, seconds = divmod(seconds, 60)
+            new_var = f"{int(minutes):02d}:{int(seconds):02d}"
+            embed.add_field(name=str(tracks) + ") " + str(m_queue), value=str(new_var), inline=False)
     await ctx.send(embed=embed)
 
 
@@ -106,6 +123,35 @@ async def queue(ctx: commands.Context):
 async def skip(ctx: commands.Context):
     await lavalink.skip(ctx.guild.id)
     await ctx.send("Skipped!")
+
+
+@bot.command(help="Vymaže queue")
+async def clear(ctx: commands.Context):
+    queue = await lavalink.queue(ctx.guild.id)
+    length = len(queue)
+    if not queue:
+        return await ctx.send("Žádné songy v queue.")
+    for i in range(length):
+        try:
+            await lavalink.remove(ctx.guild.id, 1)
+        except:
+            break
+    await ctx.send("Queue smazána")
+
+
+@bot.command(help="Vymaže song")
+async def remove(ctx: commands.Context, index: int):
+    m_queue = await lavalink.queue(ctx.guild.id)
+    length = len(m_queue)
+    if not m_queue:
+        return await ctx.send("Nic nehraje")
+    elif index == 0:
+        return await ctx.send("Nelze smazat song který teď hraje")
+    elif index >= length:
+        return await ctx.send("Toto číslo je větší než počet songů v queue")
+    else:
+        await ctx.send(f"Song {m_queue[index].title} byl odebrán z queue")
+        await lavalink.remove(ctx.guild.id, index)
 
 
 @bot.command(help="Pauza")
