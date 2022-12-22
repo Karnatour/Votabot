@@ -18,6 +18,7 @@ intents = discord.Intents.all()
 activity = discord.Activity(name="?help pro zobrazení příkazů", type=discord.ActivityType.playing)
 # bot = commands.Bot(commands.when_mentioned_or("?","!"), enable_debug_events=True, intents=intents, activity=activity)
 bot = commands.Bot(commands.when_mentioned_or(PREFIX), enable_debug_events=True, intents=intents, activity=activity)
+bot.remove_command("help")
 
 lavalink = lavaplayer.LavalinkClient(
     host=hostjs,
@@ -48,7 +49,7 @@ async def help(ctx: commands.Context):
     embed.add_field(name="clear", value="Smaže všechny songy v queue kromě té která právě hraje", inline=False)
     embed.add_field(name="join", value="Připojí se do kanálu uživatele, který použil tento příkaz", inline=False)
     embed.add_field(name="leave", value="Odpojí se z kanálu", inline=False)
-    embed.add_field(name="np", value="Zobrazí informace o songu, který právě harje", inline=False)
+    embed.add_field(name="np", value="Zobrazí informace o songu, který právě hraje", inline=False)
     embed.add_field(name="pause", value="Pozastaví song", inline=False)
     embed.add_field(name="resume", value="Pokračuje v songu", inline=False)
     embed.add_field(name="play", value="Pustí song nebo playlist", inline=False)
@@ -100,8 +101,14 @@ async def play(ctx: commands.Context, *, query: str):
     ms_queue = tracks[0].length
     s_queue, ms_queue = divmod(ms_queue, 1000)
     m_queue, s_queue = divmod(s_queue, 60)
-
-    await ctx.send(f"Přidáno do queue: {tracks[0].title} :hourglass: {int(m_queue):02d}:{int(s_queue):02d}")
+    new_var = f"{int(m_queue):02d}:{int(s_queue):02d}"
+    requester_id = tracks[0].requester
+    requester = bot.get_user(int(requester_id))
+    embed = discord.Embed(title=tracks[0].title, url=tracks[0].uri, color=0x00fbff)
+    embed.set_author(name="Přidán nový song")
+    embed.add_field(name=new_var, value=requester, inline=False)
+    await ctx.send(embed=embed)
+    #await ctx.send(f"Přidáno do queue: {tracks[0].title} :hourglass: {int(m_queue):02d}:{int(s_queue):02d}")
 
 
 @bot.command(help="Shuffle")
