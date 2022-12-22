@@ -15,7 +15,7 @@ TOKEN = TOKENjs
 PREFIX = "-"
 
 intents = discord.Intents.all()
-activity = discord.Activity(name="-help pro zobrazení příkazů", type=discord.ActivityType.playing)
+activity = discord.Activity(name="?help pro zobrazení příkazů", type=discord.ActivityType.playing)
 # bot = commands.Bot(commands.when_mentioned_or("?","!"), enable_debug_events=True, intents=intents, activity=activity)
 bot = commands.Bot(commands.when_mentioned_or(PREFIX), enable_debug_events=True, intents=intents, activity=activity)
 
@@ -78,11 +78,11 @@ async def play(ctx: commands.Context, *, query: str):
             content="Playlist přidán do queue počet songů: {}, název: {}".format(len(tracks.tracks), tracks.name, ))
         return
     await lavalink.play(ctx.guild.id, tracks[0], ctx.author.id)
-    milliseconds = tracks[0].length
-    seconds, milliseconds = divmod(milliseconds, 1000)
-    minutes, seconds = divmod(seconds, 60)
+    ms_queue = tracks[0].length
+    s_queue, ms_queue = divmod(ms_queue, 1000)
+    m_queue, s_queue = divmod(s_queue, 60)
 
-    await ctx.send(f"Přidáno do queue: {tracks[0].title} {int(minutes):02d}:{int(seconds):02d}")
+    await ctx.send(f"Přidáno do queue: {tracks[0].title} :hourglass: {int(m_queue):02d}:{int(s_queue):02d}")
 
 
 @bot.command(help="Shuffle")
@@ -91,16 +91,23 @@ async def shuffle(ctx: commands.Context):
     await ctx.send("Shuffeled")
 
 
-@bot.command(help="Právě hraje(WIP)")
+@bot.command(help="Právě hraje")
 async def np(ctx: commands.Context):
-    queue = await lavalink.queue(ctx.guild.id)
-    if not queue:
+    m_queue = await lavalink.queue(ctx.guild.id)
+    if not m_queue:
         return await ctx.send("Žádný song nehraje.")
-    old_timestamp = queue[0].position
-    milliseconds = queue[0].length
-
-    seconds, milliseconds = divmod(milliseconds, 1000)
-    minutes, seconds = divmod(seconds, 60)
+    sec_now = m_queue[0].position
+    ms_queue = m_queue[0].length
+    s_queue, ms_queue = divmod(ms_queue, 1000)
+    min_queue, s_queue = divmod(s_queue, 60)
+    min_now,sec_now = divmod(sec_now, 60)
+    requester_id = m_queue[0].requester
+    requester = bot.get_user(int(requester_id))
+    new_var = f"{int(min_now):02d}:{int(sec_now):02d}/{int(min_queue):02d}:{int(s_queue):02d}"
+    embed = discord.Embed(title=m_queue[0].title,url=m_queue[0].uri,color=0x00fbff)
+    embed.set_author(name="Právě hraje:")
+    embed.add_field(name=new_var, value=requester)
+    await ctx.send(embed=embed)
 
 
 @bot.command(help="Songy v queue")
@@ -108,14 +115,16 @@ async def queue(ctx: commands.Context):
     m_queue = await lavalink.queue(ctx.guild.id)
     if not m_queue:
         return await ctx.send("Žádné songy v queue.")
-    embed = discord.Embed(title="Právě Hraje", color=0x00fbff)
+    embed = discord.Embed(title="Queue", color=0x00fbff)
     for tracks, m_queue in enumerate(m_queue):
         if tracks != 0:
             var = m_queue.length
-            seconds, milliseconds = divmod(var, 1000)
-            minutes, seconds = divmod(seconds, 60)
-            new_var = f"{int(minutes):02d}:{int(seconds):02d}"
-            embed.add_field(name=str(tracks) + ") " + str(m_queue), value=str(new_var), inline=False)
+            s_queue, ms_queue = divmod(var, 1000)
+            m_queue, s_queue = divmod(s_queue, 60)
+            requester_id = m_queue.requester
+            requester = bot.get_user(int(requester_id))
+            new_var = f"{int(m_queue):02d}:{int(s_queue):02d} {requester}"
+            embed.add_field(name=str(tracks) + ") " + str(m_queue), value=" "+ str(new_var), inline=False)
     await ctx.send(embed=embed)
 
 
@@ -127,9 +136,9 @@ async def skip(ctx: commands.Context):
 
 @bot.command(help="Vymaže queue")
 async def clear(ctx: commands.Context):
-    queue = await lavalink.queue(ctx.guild.id)
-    length = len(queue)
-    if not queue:
+    m_queue = await lavalink.queue(ctx.guild.id)
+    length = len(m_queue)
+    if not m_queue:
         return await ctx.send("Žádné songy v queue.")
     for i in range(length):
         try:
