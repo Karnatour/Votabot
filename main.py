@@ -41,6 +41,25 @@ async def on_ready():
     print("Lavalink je ready")
 
 
+@bot.command(help="Přikazy a jejich použití")
+async def help(ctx: commands.Context):
+    embed = discord.Embed(title="Příkazý a jejich použití",color=0x00fbff,)
+    embed.add_field(name="help ", value="Zobrazí tuto zprávu", inline=False)
+    embed.add_field(name="clear", value="Smaže všechny songy v queue kromě té která právě hraje", inline=False)
+    embed.add_field(name="join", value="Připojí se do kanálu uživatele, který použil tento příkaz", inline=False)
+    embed.add_field(name="leave", value="Odpojí se z kanálu", inline=False)
+    embed.add_field(name="np", value="Zobrazí informace o songu, který právě harje", inline=False)
+    embed.add_field(name="pause", value="Pozastaví song", inline=False)
+    embed.add_field(name="resume", value="Pokračuje v songu", inline=False)
+    embed.add_field(name="play", value="Pustí song nebo playlist", inline=False)
+    embed.add_field(name="queue", value="Zobrazí songy v pořadí a inforamce o nich", inline=False)
+    embed.add_field(name="remove", value="Vymaže song podle pořadí")
+    embed.add_field(name="Použití", value="?remove {index}")
+    embed.add_field(name="shuffle", value="Prohází pořadí songů v queue", inline=False)
+    embed.add_field(name="skip", value="Přeskočí song, který právě hraje", inline=False)
+    embed.set_footer(text="Pro více informací kontaktuj Karnatour#8596")
+    await ctx.send(embed=embed)
+
 @bot.command(help="Připojí se do kanálu")
 async def join(ctx: commands.Context):
     if ctx.author.voice and ctx.author.voice.channel:
